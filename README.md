@@ -12,7 +12,7 @@ Early foundation build: local video import, FFprobe inspection, explicit Gemini 
 4. Run: .\.venv\Scripts\Activate.ps1
 5. Run: pip install -r requirements.txt
 6. Copy .env.example to .env and add your Gemini API key from https://aistudio.google.com/apikey.
-7. Run: python app.py, then open http://127.0.0.1:8765.
+7. Run: python app.py, then open http://127.0.0.1:8765.\n8. To inspect models visible to your API key, open http://127.0.0.1:8765/api/models.
 
 You can open the app without a Gemini key; AI analysis requires one. Media probing and FFmpeg rendering are local. When you click Analyze with Gemini, the selected video is uploaded to Google's Gemini API. The app does not silently upload footage.
 
