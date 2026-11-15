@@ -51,11 +51,34 @@ def home():
 def status():
     return {
         "gemini_configured": bool(os.getenv("GEMINI_API_KEY")),
-        "gemini_model": os.getenv("GEMINI_MODEL", "gemini-3.1-pro-preview"),
+        "gemini_model": os.getenv("GEMINI_MODEL", "gemini-3.8-flash"),
         "gemini_api": "Interactions API",
         "ffmpeg": shutil.which("ffmpeg") is not None,
         "ffprobe": shutil.which("ffprobe") is not None,
     }
+
+
+@app.get("/api/models")
+def list_gemini_models():
+    """Show the model names visible to this API key, for troubleshooting."""
+    key = os.getenv("GEMINI_API_KEY")
+    if not key:
+        raise HTTPException(400, "Add GEMINI_API_KEY to .env, then restart Ghost Studio.")
+    try:
+        from google import genai
+        client = genai.Client(api_key=key)
+        models = []
+        for item in client.models.list():
+            name = getattr(item, "name", None)
+            if name and "gemini" in name.lower():
+                actions = getattr(item, "supported_actions", None) or []
+                models.append({
+                    "name": name.replace("models/", ""),
+                    "supported_actions": list(actions),
+                })
+        return {"models": models}
+    except Exception as exc:
+        raise HTTPException(502, f"Could not list models for this API key: {exc}")
 
 
 @app.post("/api/upload")
@@ -109,7 +132,7 @@ def analyze(request: AnalyzeRequest):
         from google import genai
 
         client = genai.Client(api_key=key)
-        model = os.getenv("GEMINI_MODEL", "gemini-3.1-pro-preview")
+        model = os.getenv("GEMINI_MODEL", "gemini-3.8-flash")
 
         # Upload the source video, then wait until Google's file processing is complete.
         uploaded = client.files.upload(file=str(path))
@@ -180,7 +203,10 @@ the actual uploaded video's duration.
     except json.JSONDecodeError as exc:
         raise HTTPException(502, f"Gemini returned invalid JSON: {exc}")
     except Exception as exc:
-        raise HTTPException(502, f"Gemini analysis failed: {exc}")
+        detail = str(exc)
+        if "not found" in detail.lower() or "404" in detail:
+            detail += " Check http://127.0.0.1:8765/api/models to see which Gemini models this API key can access. You can also change GEMINI_MODEL in .env."
+        raise HTTPException(502, f"Gemini analysis failed: {detail}")
 
 
 @app.post("/api/render")
