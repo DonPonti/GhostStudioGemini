@@ -1,0 +1,13 @@
+.env
+.venv/
+__pycache__/
+*.py[cod]
+.vscode/
+.idea/
+media/
+renders/
+*.mp4
+*.mov
+*.mkv
+*.wav
+*.mp3
